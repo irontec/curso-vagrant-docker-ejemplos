@@ -1,0 +1,31 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+    ENV['VAGRANT_DEFAULT_PROVIDER'] = 'docker'
+
+    config.vm.define "phpapache_network", autostart: false do |apache|
+        apache.vm.provider "docker" do |d|
+            d.build_dir = "./docker/phpapache/"
+            d.build_args = "-t=phpapache_network"
+            d.name = "phpapache_network"
+            d.ports = ["9999:80"]
+            d.create_args = [ "--network", "vagrant", "--ip", "192.168.0.100" ]
+        end
+        apache.vm.synced_folder "./app", "/var/www/html"
+    end
+
+    config.vm.define "mysql_network", autostart: false do |mysql|
+        mysql.vm.provider "docker" do |d|
+            d.image = "mysql:5.7"
+            d.name = "mysql_network"
+            d.ports = ["9936:3306"]
+            d.create_args = [ "-e", "MYSQL_ROOT_PASSWORD=1234", "-e", "MYSQL_DATABASE=mibasededatos", "--network", "vagrant", "--ip", "192.168.0.101" ]
+        end
+        mysql.vm.synced_folder "./docker/mysql/dbdata", "/var/lib/mysql"
+    end
+end

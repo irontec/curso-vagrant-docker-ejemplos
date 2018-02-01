@@ -1,0 +1,46 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+    ENV['VAGRANT_DEFAULT_PROVIDER'] = 'docker'
+
+    config.vm.define "apache", autostart: false do |apache|
+        apache.vm.provider "docker" do |d|
+            d.build_dir = "./docker/apache/"
+            d.build_args = "-t=vagrant_apache"
+            d.name = "vagrant_apache"
+            d.ports = ["9999:80"]
+            d.create_args = [ "--network", "vagrant", "--ip", "192.168.0.100" ]
+        end
+        apache.vm.synced_folder "./app", "/var/www/html"
+    end
+
+    config.vm.define "phpfpm", autostart: false do |phpfpm|
+
+        phpfpm.vm.provider "docker" do |d|
+            d.build_dir = "./docker/phpfpm/"
+            d.build_args = "-t=vagrant_phpfpm"
+            d.name = "vagrant_phpfpm"
+            d.create_args = [ "--network", "vagrant", "--ip", "192.168.0.101" ]
+        end
+        phpfpm.vm.synced_folder "./app", "/var/www/html"
+    end
+
+    config.vm.define "mysql", autostart: false do |mysql|
+        mysql.vm.provider "docker" do |d|
+            d.image = "mysql:5.7"
+            d.name = "vagrant_mysql"
+            d.env = {
+                "MYSQL_ROOT_PASSWORD" =>"1234",
+                "MYSQL_DATABASE"=>"mibasededatos"
+            }
+            d.create_args = [ "--network", "vagrant", "--ip", "192.168.0.102" ]
+        end
+        mysql.vm.synced_folder "./docker/mysql/dbdata","/var/lib/mysql"
+    end
+
+end
